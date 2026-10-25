@@ -19,7 +19,8 @@
       "aud_audio_core": "package dependency; the ABI headers, AudCommand of the shell protocol"
     },
     "usedBy": {
-      "aud_audio_vst3": "the C++ core under its own namespace, scripts/plugin-build.js, the shell protocol (plugin-010)"
+      "aud_audio_vst3": "the C++ core under its own namespace, scripts/plugin-build.js, the shell protocol (plugin-010)",
+      "aud_audio_auv3": "the C++ core under its own namespace, scripts/plugin-build.js for macOS and iOS, the shell protocol's messages (plugin-010)"
     }
   }
 }
