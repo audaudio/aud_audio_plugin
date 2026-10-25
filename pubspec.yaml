@@ -1,0 +1,10 @@
+name: aud_audio_plugin
+description: "Format-agnostic core of the plugin shells of the Audanika Audio Engine: engine over the headless host, plugin configuration, presets, state, MIDI and transport."
+version: 0.0.1
+repository: https://github.com/audaudio/aud_audio_plugin.git
+
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.33.0
