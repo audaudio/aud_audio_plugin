@@ -9,7 +9,8 @@ same way.
 
 - **C++ core (`src/`, namespace `aud_plugin`).** The engine over the headless
   host of `aud_audio_graph` with its control thread, the lock-free parameter
-  ring, presets and the waits of offline rendering (`aud_plugin_engine`);
+  ring, presets, the waits of offline rendering and the graph's
+  diagnostics with the sample cache's use in the log (`aud_plugin_engine`);
   `plugin.json`, the graph document, the presets and the state of an instance
   (`aud_plugin_settings`, see [doc/plugin-config.md](doc/plugin-config.md));
   a host's MIDI as UMP events (`aud_plugin_midi`) and its transport as the
