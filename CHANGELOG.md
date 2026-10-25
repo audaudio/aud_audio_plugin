@@ -10,3 +10,4 @@
 ### Changed
 
 - Name aud_audio_auv3 among the users of the core
+- Log the graph's diagnostics and the sample cache's use

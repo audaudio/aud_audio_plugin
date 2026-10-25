@@ -19,6 +19,9 @@
 //   and is passed on again; its value counts as current. A preset a host
 //   asks for in a block travels the same way, newest request first.
 // - Other threads hand tasks to the control thread with run() and wait.
+// - The control thread logs the graph's diagnostics - streams that fell
+//   behind, blocks that took too long, events that came late - summed per
+//   node and code, at most every 2 s, with the sample cache's use.
 
 #ifndef AUD_PLUGIN_ENGINE_HPP
 #define AUD_PLUGIN_ENGINE_HPP
@@ -28,6 +31,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -206,6 +210,7 @@ class Engine {
   void applyRequestedPreset();
   bool passOn(uint32_t id, float value);
   void takeNotifications();
+  void logDiagnostics(int64_t now);
 
   AudGraph* graph_ = nullptr;
   AudHost* host_ = nullptr;
@@ -244,6 +249,9 @@ class Engine {
   uint64_t tasksDone_ = 0;
   bool stopping_ = false;
   int64_t lastNotificationsNs_ = 0;
+  // The diagnostics since the last log, count per node and code.
+  std::map<std::pair<int32_t, int32_t>, uint64_t> diagnostics_;
+  int64_t lastDiagnosticsNs_ = 0;
 
   std::thread thread_;
 };

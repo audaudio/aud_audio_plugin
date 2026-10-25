@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 #include "aud_clock.h"
@@ -32,12 +33,41 @@ constexpr int64_t kOfflineWaitNs = 100'000'000;
 // before it wakes the thread again.
 constexpr int64_t kOfflinePassNs = 2'000'000;
 
+// How often the control thread logs the diagnostics at most.
+constexpr int64_t kDiagnosticsPeriodNs = 2'000'000'000;
+
 // The ramp of a parameter change, in seconds: long enough that automation
 // steps at block boundaries do not click, short enough to follow it.
 constexpr double kRampSeconds = 0.005;
 
 float clamp(const EngineParam& param, float value) {
   return std::min(param.max, std::max(param.min, value));
+}
+
+// The name of a diagnostic's code in the log.
+std::string diagnosticName(int32_t code) {
+  switch (code) {
+    case AUD_ERROR_UNDERFLOW:
+      return "stream underflow";
+    case AUD_ERROR_OVERLOAD:
+      return "overload";
+    case AUD_ERROR_LATE:
+      return "late events";
+    case AUD_ERROR_QUEUE_FULL:
+      return "queue full";
+    case AUD_ERROR_CAPACITY:
+      return "notes refused";
+    case AUD_ERROR_RETIRED:
+      return "events of a retired node";
+    case AUD_ERROR_STATE:
+      return "parked for state";
+    case AUD_ERROR_UNSUPPORTED:
+      return "unsupported";
+    case AUD_GRAPH_ERROR_REALTIME_VIOLATION:
+      return "realtime violation";
+    default:
+      return "code " + std::to_string(code);
+  }
 }
 
 }  // namespace
@@ -428,8 +458,43 @@ void Engine::takeNotifications() {
   if (graph_ == nullptr) return;
   AudGraphNotification notifications[32];
   for (auto& n : notifications) n.struct_size = sizeof(AudGraphNotification);
-  while (aud_graph_take_notifications(graph_, notifications, 32) == 32) {
+  int32_t taken = 0;
+  do {
+    taken = aud_graph_take_notifications(graph_, notifications, 32);
+    for (int32_t i = 0; i < taken; ++i) {
+      const AudGraphNotification& n = notifications[i];
+      if (n.type != AUD_NOTIFY_DIAGNOSTIC) continue;
+      diagnostics_[{n.node, n.code}] += std::max<uint32_t>(n.count, 1);
+    }
+  } while (taken == 32);
+  logDiagnostics(aud_clock_now_ns());
+}
+
+// Logs the diagnostics since the last log, at most every
+// kDiagnosticsPeriodNs.
+void Engine::logDiagnostics(int64_t now) {
+  if (diagnostics_.empty() || now - lastDiagnosticsNs_ < kDiagnosticsPeriodNs) return;
+  lastDiagnosticsNs_ = now;
+  std::string line = "Diagnostics:";
+  for (const auto& [key, count] : diagnostics_) {
+    line += key.first == 0 ? " graph " : " node " + std::to_string(key.first) + " ";
+    line += diagnosticName(key.second) + " " + std::to_string(count) + ",";
   }
+  diagnostics_.clear();
+  AudCacheUsage usage{};
+  usage.struct_size = sizeof(AudCacheUsage);
+  if (aud_cache_usage(&usage) == AUD_OK) {
+    char cache[160];
+    std::snprintf(cache, sizeof(cache),
+                  " cache %lld of %llu MB, %llu trims, %u tasks",
+                  static_cast<long long>(usage.bytes >> 20),
+                  static_cast<unsigned long long>(usage.budget >> 20),
+                  static_cast<unsigned long long>(usage.trims), usage.tasks);
+    line += cache;
+  } else {
+    line.pop_back();
+  }
+  logError(line);
 }
 
 }  // namespace aud_plugin
