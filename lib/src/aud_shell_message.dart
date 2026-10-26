@@ -752,9 +752,8 @@ final class AudShellRemove extends AudShellMessage {
 }
 
 // #############################################################################
-/// To the editor: quit. The plugin of this package does not send it; it
-/// ends the connection instead, which ends [AudShellClient.messages]. An
-/// editor quits on either.
+/// To the editor: quit. A plugin may end the connection instead; an editor
+/// quits on either.
 final class AudShellClose extends AudShellMessage {
   /// Creates the message.
   const AudShellClose();

@@ -44,7 +44,10 @@ float clamp(const EngineParam& param, float value) {
   return std::min(param.max, std::max(param.min, value));
 }
 
-// The name of a diagnostic's code in the log.
+
+}  // namespace
+
+// #############################################################################
 std::string diagnosticName(int32_t code) {
   switch (code) {
     case AUD_ERROR_UNDERFLOW:
@@ -69,8 +72,6 @@ std::string diagnosticName(int32_t code) {
       return "code " + std::to_string(code);
   }
 }
-
-}  // namespace
 
 // #############################################################################
 // Engine

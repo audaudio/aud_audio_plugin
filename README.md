@@ -35,8 +35,10 @@ RealtimeSanitizer, `AUD_PLUGIN_RTSAN` (`src/aud_plugin_config.hpp`).
 ```bash
 dart pub get
 node scripts/test-native.js
+node --test "test/scripts/**/*.spec.js"
 dart test
 ```
 
 `test-native.js` builds and runs the native unit tests of `test/native` on
-macOS and Windows; `dart test` runs those of the shell protocol.
+macOS and Windows; `node --test` runs those of `scripts/plugin-build.js`,
+`dart test` those of the shell protocol.

@@ -5,15 +5,23 @@
 // found in the LICENSE file in the root of this package.
 
 // The engine over the headless host (aud_plugin_engine.hpp) with the
-// graph's own nodes: opening a document, its parameters, presets, and
-// blocks rendered offline as a host renders them.
+// graph's own nodes: opening a document, its parameters, presets, blocks
+// rendered offline as a host renders them, and the graph's diagnostics in
+// the log.
 
 #include "aud_plugin_engine.hpp"
 
+#include <chrono>
 #include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <thread>
 #include <vector>
 
 #include "aud_plugin_harness.hpp"
+#include "aud_plugin_midi.hpp"
 
 using namespace aud_plugin;
 using aud_plugin_test::expectEqual;
@@ -106,6 +114,28 @@ struct Opened {
   Engine engine;
   bool ok = false;
 };
+
+// Points the log of the plugin at `file` (AUD_PLUGIN_LOG_ENV), or nowhere
+// for an empty one.
+void logTo(const std::string& file) {
+#if defined(_WIN32)
+  _putenv_s(AUD_PLUGIN_LOG_ENV, file.c_str());
+#else
+  if (file.empty()) {
+    unsetenv(AUD_PLUGIN_LOG_ENV);
+  } else {
+    setenv(AUD_PLUGIN_LOG_ENV, file.c_str(), 1);
+  }
+#endif
+}
+
+// The text of `file`; empty when it does not exist.
+std::string textOf(const std::string& file) {
+  std::ifstream in(file);
+  std::stringstream text;
+  text << in.rdbuf();
+  return text.str();
+}
 
 const EngineParam* paramNamed(const Engine& engine, const std::string& node,
                               const std::string& param) {
@@ -211,6 +241,59 @@ int main() {
       Opened opened;
       expectEqual(opened.engine.latency(), 0);
       expectEqual(opened.engine.tail() < 48000u * 60u, true);
+    });
+  });
+
+  group("diagnosticName(code)", [] {
+    test("names the codes the graph reports", [] {
+      expectEqual(diagnosticName(AUD_ERROR_UNDERFLOW), std::string("stream underflow"));
+      expectEqual(diagnosticName(AUD_ERROR_OVERLOAD), std::string("overload"));
+      expectEqual(diagnosticName(AUD_ERROR_LATE), std::string("late events"));
+      expectEqual(diagnosticName(AUD_ERROR_QUEUE_FULL), std::string("queue full"));
+      expectEqual(diagnosticName(AUD_ERROR_CAPACITY), std::string("notes refused"));
+      expectEqual(diagnosticName(AUD_ERROR_RETIRED), std::string("events of a retired node"));
+      expectEqual(diagnosticName(AUD_ERROR_STATE), std::string("parked for state"));
+      expectEqual(diagnosticName(AUD_ERROR_UNSUPPORTED), std::string("unsupported"));
+      expectEqual(diagnosticName(AUD_GRAPH_ERROR_REALTIME_VIOLATION),
+                  std::string("realtime violation"));
+    });
+    test("gives a code without a name its number", [] {
+      expectEqual(diagnosticName(-999), std::string("code -999"));
+    });
+  });
+
+  group("diagnostics", [] {
+    test("the control thread logs what the graph reports", [] {
+      const std::string file =
+          (std::filesystem::temp_directory_path() / "aud_plugin_engine_test.log").string();
+      std::filesystem::remove(file);
+      logTo(file);
+      {
+        Opened opened;
+        // A block with more notes than the graph's queue holds: it drops
+        // the rest and reports the queue full.
+        std::vector<float> left(kFrames), right(kFrames);
+        float* outputs[] = {left.data(), right.data()};
+        std::vector<AudEvent> events;
+        for (uint32_t i = 0; i < 20000; ++i) {
+          events.push_back(midiEvent(i % 2 == 0 ? 0x90 : 0x80, 60, 100, 0));
+        }
+        EngineBlock block;
+        block.outputs = outputs;
+        block.channels = 2;
+        block.frames = kFrames;
+        block.events = events.data();
+        block.numEvents = static_cast<uint32_t>(events.size());
+        opened.engine.render(block);
+        for (int i = 0; i < 100 && textOf(file).find("Diagnostics:") == std::string::npos; ++i) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+      }
+      logTo("");
+      const std::string text = textOf(file);
+      expectEqual(text.find("Diagnostics:") != std::string::npos, true);
+      expectEqual(text.find(" cache ") != std::string::npos, true);
+      std::filesystem::remove(file);
     });
   });
 

@@ -47,6 +47,11 @@
 namespace aud_plugin {
 
 // #############################################################################
+// The name of a graph diagnostic's `code` in the log, e.g. "stream
+// underflow" for AUD_ERROR_UNDERFLOW; "code <n>" for one without a name.
+std::string diagnosticName(int32_t code);
+
+// #############################################################################
 // A parameter of the loaded document.
 struct EngineParam {
   // ...........................................................................

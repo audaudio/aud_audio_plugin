@@ -62,11 +62,13 @@ const tests = [
     graph: true,
   },
   { file: 'aud_plugin_transport_test.cpp', sources: [source('aud_plugin_transport.cpp')] },
+  { file: 'aud_plugin_sync_test.cpp', sources: [source('aud_plugin_sync.cpp')] },
   {
     file: 'aud_plugin_engine_test.cpp',
     sources: [
       ...bundleSources,
       source('aud_plugin_engine.cpp'),
+      source('aud_plugin_midi.cpp'),
       source('aud_plugin_settings.cpp'),
       source('aud_plugin_sync.cpp'),
     ],
