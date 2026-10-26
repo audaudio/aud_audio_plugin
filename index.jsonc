@@ -1,0 +1,26 @@
+// @license
+// Copyright (c) Audanika. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+{
+  "name": "aud_audio_plugin",
+  "summary": "Format-agnostic core of the plugin shells of the Audanika Audio Engine: engine over the headless host, plugin configuration, presets, state, MIDI events, transport, content lookup and the shell protocol.",
+  "domain": [
+    "Engine over the headless host: control thread, lock-free parameter ring, presets, offline waits, latency and tail (plugin-002)",
+    "plugin.json, document, presets and state as JSON; content locations; system log; macOS, iOS and Windows",
+    "Node build of the core, the graph and the node packages from a package config: recipes, cached objects, generated registration (build-001)",
+    "Dart end of the shell protocol: AudShellMessage and its framing AudShellCodec"
+  ],
+  "interfaces": {
+    "uses": {
+      "aud_audio_graph": "package dependency; the headless host in C, aud_json, the graph sources compiled by scripts/plugin-build.js",
+      "aud_audio_core": "package dependency; the ABI headers, AudCommand of the shell protocol"
+    },
+    "usedBy": {
+      "aud_audio_vst3": "the C++ core under its own namespace, scripts/plugin-build.js, the shell protocol (plugin-010)",
+      "aud_audio_auv3": "the C++ core under its own namespace, scripts/plugin-build.js for macOS and iOS, the shell protocol's messages (plugin-010)"
+    }
+  }
+}
