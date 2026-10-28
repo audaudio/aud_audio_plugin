@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Upgrade the dependencies and the DNA layers
+
+- Upgrade dna_audanika to ^0.1.0
+- Upgrade helix to ^1.14.0
+- Set the identity the DNA layers ask for in dna/_vars.json
+- Add the blog post of this change, in English and German
+- Bring the README to the README template, in English and German
+
 ## 0.1.0 - 2026-10-26
 
 ### Added
