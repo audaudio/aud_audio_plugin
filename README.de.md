@@ -1,11 +1,87 @@
 # aud_audio_plugin
 
-Der formatneutrale Kern der Plugin-Shells der Audanika Audio Engine. Eine
-Plugin-Shell verpackt die Engine in ein Plugin-Format; alles, was nicht vom
-Format abhängt, liegt hier, damit jede Shell den Graphen einer App gleich
-spielt.
+[English](README.md) | Deutsch
 
-## Was das Paket enthält
+[![CI](https://github.com/audaudio/aud_audio_plugin/actions/workflows/quick_check.yaml/badge.svg)](https://github.com/audaudio/aud_audio_plugin/actions/workflows/quick_check.yaml)
+
+Formatneutraler Kern der Plugin-Shells der Audanika Audio Engine: Engine
+über dem Headless Host, Plugin-Konfiguration, Presets, Zustand, MIDI und
+Transport. Läuft auf macOS, iOS und Windows.
+
+## Motivation
+
+Eine Plugin-Shell verpackt die Engine in ein Plugin-Format. Alles, was
+nicht vom Format abhängt — die Engine über dem Headless Host, die
+Plugin-Konfiguration, Presets und Zustand, das MIDI und der Transport eines
+Hosts, die Orte des Contents und der Build der Node-Pakete — müsste sonst
+pro Shell neu geschrieben werden. Dieses Paket hält es einmal, damit jede
+Shell den Graphen einer App gleich spielt und eine Shell nur noch das
+Format beisteuert.
+
+## Installation
+
+Das Paket ist nicht auf pub.dev veröffentlicht; binde es über seine
+Git-Tags ein:
+
+```yaml
+dependencies:
+  aud_audio_plugin:
+    git:
+      url: git@github.com:audaudio/aud_audio_plugin.git
+      tag_pattern: "{{version}}"
+    version: ^0.1.0
+```
+
+## Verwendung
+
+Der Dart-Teil ist das Shell-Protokoll zwischen einem Plugin und seinem
+Editor: die Nachrichten (`AudShellMessage`) und ihre Rahmung
+(`AudShellCodec`).
+
+```dart
+import 'dart:typed_data';
+
+import 'package:aud_audio_plugin/aud_audio_plugin.dart';
+
+Future<void> main() async {
+  // The editor introduces itself; the message travels as one frame.
+  const hello = AudShellHello(token: 'abc', instance: 0, pid: 4711);
+  final frame = AudShellCodec.encode(hello);
+  print(frame.length);
+
+  // The plugin's end decodes the bytes, in whatever chunks they arrive.
+  final chunks = [frame.sublist(0, 7), frame.sublist(7)];
+  final messages = await Stream<Uint8List>.fromIterable(
+    chunks,
+  ).transform(AudShellCodec.decoder()).toList();
+  print(messages);
+}
+```
+
+Es gibt aus:
+
+```text
+70
+[AudShellHello({type: hello, instance: 0, token: abc, pid: 4711, version: 3})]
+```
+
+## Grenzen
+
+- Kein eigenes Plugin-Format: eine Shell wie ein VST3- oder AUv3-Wrapper
+  setzt das Format auf diesen Kern
+- Der C++-Kern baut nur auf macOS, iOS und Windows
+- Das Dart-Paket enthält nur das Shell-Protokoll, nicht die Engine; die
+  Engine erreicht man über den Build des C++-Kerns einer Shell
+
+## Dokumentation
+
+- [Plugin-Konfiguration](doc/plugin-config.md): `plugin.json`, das
+  Graph-Dokument, Presets und der Zustand einer Instanz
+- [Guides](doc/guides/): Entwicklungs-, Code-, Test- und
+  Dokumentationsleitfäden
+- [Blog](doc/de/blog/): die Beiträge zu den Änderungen des Pakets
+
+## Funktionsweise
 
 - **C++-Kern (`src/`, Namespace `aud_plugin`).** Die Engine über dem
   Headless Host von `aud_audio_graph` mit ihrem Control-Thread, dem
@@ -32,7 +108,15 @@ Der Build einer Shell definiert `AUD_PLUGIN_LOG_SUBSYSTEM` (ihre Bundle-ID),
 `AUD_PLUGIN_LOG_ENV` (die Variable, die die Log-Datei eines Tests nennt) und,
 für den RealtimeSanitizer, `AUD_PLUGIN_RTSAN` (`src/aud_plugin_config.hpp`).
 
-## Bauen und testen
+## Status
+
+Vor 1.0 — die API und das Shell-Protokoll können sich zwischen
+Minor-Versionen ändern.
+
+## Mitwirken
+
+Siehe [doc/guides/develop-guide.md](doc/guides/develop-guide.md). Baue und
+teste das Paket mit:
 
 ```bash
 dart pub get
@@ -44,3 +128,7 @@ dart test
 `test-native.js` baut und startet die nativen Unit-Tests von `test/native`
 auf macOS und Windows; `node --test` startet die von
 `scripts/plugin-build.js`, `dart test` die des Shell-Protokolls.
+
+## Lizenz
+
+MIT — siehe [LICENSE](LICENSE).
