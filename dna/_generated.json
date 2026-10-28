@@ -87,7 +87,7 @@
       "ecosystem": null,
       "resolvedVersion": null,
       "via": null,
-      "hash": "0x00000000811c9dc5"
+      "hash": "0x107eff1dc17f9c99"
     }
   ],
   "claude": {
@@ -311,7 +311,7 @@
     },
     {
       "path": "doc/templates/readme-template.md",
-      "hash": "0x0d16a11001dc2f0c"
+      "hash": "0x898b210120a2dafa"
     },
     {
       "path": "guides/setup-github-guide.md",
