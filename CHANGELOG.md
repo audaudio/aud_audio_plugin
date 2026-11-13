@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Require Flutter 3.50 and Dart 3.14, build the DNA
+
 ## 0.1.2 - 2026-10-29
 
 ## 0.1.1 - 2026-10-28
@@ -17,6 +23,7 @@
 - Add the blog post of this change, in English and German
 
 - Bring the README to the README template, in English and German
+
 
 ## 0.1.0 - 2026-10-26
 
